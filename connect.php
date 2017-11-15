@@ -81,7 +81,6 @@ class db_io extends db_base
     {
         $where="" ? "" : " WHERE ".$where;
         $query="SELECT ".$what." FROM `".$this->db_table."`".$where;
-        echo $query;
         $this->result = $this->query($query);
     }
     
