@@ -2,7 +2,7 @@
 
 include 'connect.php';
 
-class db_Object
+class db_Object extends db_base
 /* Generic object for interactions with mysql databases.
  * 
  * Parameter:
@@ -29,6 +29,7 @@ class db_Object
     public function __construct( ){
         $year = date("Y");
         $this->database="Zieger_Miete_".$year;
+        parent::__construct($this->database);
     }
 
     // to create a new database entry:
@@ -62,18 +63,17 @@ class db_Object
             $string=",'".$this->row."'";
         }
         
-        $query="INSERT INTO `".$this->db_table."` VALUES (''".$string.")";
-        query($this->database,$query);
+        $query="INSERT INTO `".$this->db_table."` VALUES (''".$string.",'1')";
+        $this->query($query);
     }
     
     protected function read_from_db()
     { 
         $query="SELECT * FROM `".$this->db_table."` WHERE id=".$this->id." AND active=1 ";
-        $result = query($this->database,$query);
+        $result = $this->query($query);
         $row = $result->fetch(PDO::FETCH_ASSOC);
         array_shift($row);
         $this->setter($row);
-        //$this->row=$row;
     }
     
     protected function setter($row)
