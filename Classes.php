@@ -2,7 +2,7 @@
 
 include 'connect.php';
 
-class db_Object extends db_base
+class db_Object extends db_io
 /* Generic object for interactions with mysql databases.
  * 
  * Parameter:
@@ -21,15 +21,14 @@ class db_Object extends db_base
  * 
  */
 {
-    protected $database;
-    private $id;
+    protected $id;
     protected $row;
-    protected $db_table;
     
-    public function __construct( ){
+    
+    public function __construct( $db_table ){
         $year = date("Y");
-        $this->database="Zieger_Miete_".$year;
-        parent::__construct($this->database);
+        $database="Zieger_Miete_".$year;
+        parent::__construct($database,$db_table);
     }
 
     // to create a new database entry:
@@ -37,7 +36,7 @@ class db_Object extends db_base
     { 
         $instance = new static();
         $instance->row=$row;
-        $instance->write_on_db();
+        $instance->write_on_db($row);
         return $instance;
     }
     
@@ -46,39 +45,10 @@ class db_Object extends db_base
     {
         $instance = new static();
         $instance->id=$id;
-        $instance->read_from_db();
+        $instance->read_from_db($what="*",$where="id=".$id);
+        $instance->row = $instance->result->fetch(PDO::FETCH_ASSOC);
+        array_shift($instance->row);
         return $instance;
-    }
-   
-    protected function write_on_db()
-    {
-        if (is_array($this->row))
-        {
-            foreach ($this->row as $s)
-            {
-                $string .= ",'".$s."'";
-            }
-        } else 
-        {
-            $string=",'".$this->row."'";
-        }
-        
-        $query="INSERT INTO `".$this->db_table."` VALUES (''".$string.",'1')";
-        $this->query($query);
-    }
-    
-    protected function read_from_db()
-    { 
-        $query="SELECT * FROM `".$this->db_table."` WHERE id=".$this->id." AND active=1 ";
-        $result = $this->query($query);
-        $row = $result->fetch(PDO::FETCH_ASSOC);
-        array_shift($row);
-        $this->setter($row);
-    }
-    
-    protected function setter($row)
-    {
-        $this->row = $row;
     }
 
 }
@@ -90,17 +60,9 @@ class Main_Object extends db_Object
  * 
  */
 {
-    private $name;
-   
     public function __construct()
     {
-        parent::__construct();
-        $this->db_table = "main_objects";
-    }
-    
-    protected function setter($row)
-    {
-        $this->name = $row["name"];
+        parent::__construct("main_objects");
     }
     
     /**
@@ -108,7 +70,7 @@ class Main_Object extends db_Object
      */
     public function getName()
     {
-        return $this->name;
+        return $this->row["name"];
     }
     
 }
@@ -123,19 +85,10 @@ class Sub_Object extends db_Object
  * 
  */
 {
-    private $main_id;
-    private $name;
     
     public function __construct()
     {
-        parent::__construct();
-        $this->db_table = "sub_objects";
-    }
-    
-    protected function setter($row)
-    {
-        $this->main_id = $row["main_id"];
-        $this->name = $row["name"];
+        parent::__construct("sub_objects");
     }
     
     /**
@@ -143,7 +96,7 @@ class Sub_Object extends db_Object
      */
     public function getName()
     {
-        return $this->name;
+        return $this->row["name"];
     }
     
 }
@@ -153,19 +106,9 @@ class tenant extends db_Object
  *  Tenant basic information.
  */
 {
-    private $name;
-    private $fName;
-    
     public function __construct()
     {
-        parent::__construct();
-        $this->db_table = "tenants";
-    }
-    
-    protected function setter($row)
-    {
-        $this->fName = $row["fName"];
-        $this->name = $row["name"];
+        parent::__construct("tenants");
     }
     
     /**
@@ -173,6 +116,6 @@ class tenant extends db_Object
      */
     public function getName()
     {
-        return $this->fName." ".$this->name;
+        return $this->row["fName"]." ".$this->row["name"];
     }
 }

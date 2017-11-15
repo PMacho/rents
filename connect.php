@@ -49,3 +49,41 @@ class db_base extends PDO
     }
 }
 
+class db_io extends db_base
+{
+    protected $db_table;
+    protected $result;
+    
+    public function __construct($database,$db_table)
+    {
+        parent::__construct($database);
+        $this->db_table=$db_table;
+    }
+    
+    protected function write_on_db($row)
+    {
+        if (is_array($row))
+        {
+            foreach ($row as $s)
+            {
+                $string .= ",'".$s."'";
+            }
+        } else 
+        {
+            $string=",'".$row."'";
+        }
+        
+        $query="INSERT INTO `".$this->db_table."` VALUES (''".$string.")";
+        $this->query($query);
+    }
+    
+    protected function read_from_db($what="*",$where="")
+    {
+        $where="" ? "" : " WHERE ".$where;
+        $query="SELECT ".$what." FROM `".$this->db_table."`".$where;
+        echo $query;
+        $this->result = $this->query($query);
+    }
+    
+}
+
