@@ -1,6 +1,6 @@
 <?php
 
-class db_base extends PDO
+class db_connect extends PDO
 {
 
     private $servername;
@@ -49,7 +49,7 @@ class db_base extends PDO
     }
 }
 
-class db_io extends db_base
+class db_io extends db_connect
 {
     protected $db_table;
     protected $result;

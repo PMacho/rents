@@ -45,7 +45,7 @@ class db_Object extends db_io
     {
         $instance = new static();
         $instance->id=$id;
-        $instance->read_from_db($what="*",$where="id=".$id);
+        $instance->read_from_db($what="*",$where=$id);
         $instance->row = $instance->result->fetch(PDO::FETCH_ASSOC);
         array_shift($instance->row);
         return $instance;
