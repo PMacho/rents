@@ -2,17 +2,29 @@
 
 include 'connect.php';
 
-class Object
-/* Hauptobjekte:
+class db_Object
+/* Generic object for interactions with mysql databases.
  * 
- * Wohungen, Häuser
+ * Parameter:
+ *     database ... Database: defined in __construct
+ *     db_table ... The database table: defined in the __construct of childs.   
+ * 
+ * Creation of database rows:
+ *     db_Object::create_db_entry($row);
+ * where row can be a single parameter or an array.
+ * 
+ * Access rows of the database:
+ *     db_Object::access_db_entry($id);
+ * where $id is the id of the row.
+ * By default the $this->row variable is filled with the returned row, by $this->setter. The 
+ * setter function can be overriden in child classes to access certain entries.
  * 
  */
 {
     protected $database;
     private $id;
-    private $name; //e.g. Wohnung 1
-    protected $db_table = "main_objects";
+    protected $row;
+    protected $db_table;
     
     public function __construct( ){
         $year = date("Y");
@@ -20,11 +32,10 @@ class Object
     }
 
     // to create a new database entry:
-    public static function create_db_entry( $name )
+    public static function create_db_entry( $row )
     { 
-        echo "mah";
         $instance = new static();
-        $instance->name=$name;
+        $instance->row=$row;
         $instance->write_on_db();
         return $instance;
     }
@@ -40,16 +51,56 @@ class Object
    
     protected function write_on_db()
     {
-        $query="INSERT INTO `".$this->db_table."` VALUES ('','".$this->name."')";
+        if (is_array($this->row))
+        {
+            foreach ($this->row as $s)
+            {
+                $string .= ",'".$s."'";
+            }
+        } else 
+        {
+            $string=",'".$this->row."'";
+        }
+        
+        $query="INSERT INTO `".$this->db_table."` VALUES (''".$string.")";
         query($this->database,$query);
     }
     
     protected function read_from_db()
     { 
-        $query="SELECT `name` FROM `".$this->db_table."` WHERE id=".$this->id."";
+        $query="SELECT * FROM `".$this->db_table."` WHERE id=".$this->id." AND active=1 ";
         $result = query($this->database,$query);
         $row = $result->fetch(PDO::FETCH_ASSOC);
-        $this->name=$row[name];
+        array_shift($row);
+        $this->setter($row);
+        //$this->row=$row;
+    }
+    
+    protected function setter($row)
+    {
+        $this->row = $row;
+    }
+
+}
+
+class Main_Object extends db_Object
+/* Hauptobjekte:
+ * 
+ * Wohungen, Häuser
+ * 
+ */
+{
+    private $name;
+   
+    public function __construct()
+    {
+        parent::__construct();
+        $this->db_table = "main_objects";
+    }
+    
+    protected function setter($row)
+    {
+        $this->name = $row["name"];
     }
     
     /**
@@ -59,10 +110,10 @@ class Object
     {
         return $this->name;
     }
-
+    
 }
 
-class Sub_Object extends Object
+class Sub_Object extends db_Object
 /* Mietobjekte:
  * 
  * Zimmer in Wohungen, Wohnungen in Häusern
@@ -73,23 +124,55 @@ class Sub_Object extends Object
  */
 {
     private $main_id;
-    protected $db_table="sub_objects";
+    private $name;
     
-    // to create a new database entry:
-    public static function create_db_entry( $main_id , $name )
+    public function __construct()
     {
-        $instance = new static();
-        $instance->main_id=$main_id;
-        $instance->name=$name;
-        $instance->write_on_db();
-        return $instance;
+        parent::__construct();
+        $this->db_table = "sub_objects";
     }
     
-    // override:
-    protected function write_on_db()
+    protected function setter($row)
     {
-        $query="INSERT INTO `".$this->db_table."` VALUES ('','".$this->main_id."','".$this->name."')";
-        query($this->database,$query);
+        $this->main_id = $row["main_id"];
+        $this->name = $row["name"];
     }
     
+    /**
+     * @return mixed
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+    
+}
+
+class tenant extends db_Object
+/*
+ *  Tenant basic information.
+ */
+{
+    private $name;
+    private $fName;
+    
+    public function __construct()
+    {
+        parent::__construct();
+        $this->db_table = "tenants";
+    }
+    
+    protected function setter($row)
+    {
+        $this->fName = $row["fName"];
+        $this->name = $row["name"];
+    }
+    
+    /**
+     * @return mixed
+     */
+    public function getName()
+    {
+        return $this->fName." ".$this->name;
+    }
 }
