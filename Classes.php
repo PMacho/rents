@@ -141,7 +141,7 @@ class tenant extends db_Object
  */
 {
 
-    private $objects;
+    private $contracts;
 
     public function __construct()
     {
@@ -162,16 +162,27 @@ class tenant extends db_Object
         return $this->row["fName"];
     }
 
+    public function contracts()
+    {
+        return contract::access_db_entry("tenant_id=" . $this->id);
+    }
+    
     public function objects()
     // returns all subObjects rented by tentant
     {
-        // contracts can be an array
-        $contracts = contract::access_db_entry("tenant_id=" . $this->id);
+        $contracts = $this->contracts();
         foreach ($contracts as $contract) {
             $object = subObject::access_db_entry("id=" . $contract->getObjectId());
             $objects[] = clone $object;
         }
         return returner($objects);
+    }
+    
+    public function payments()
+    // returns all payments of selected year, of the actual tentant
+    {
+        $payments = payment::access_db_entry("tenant_id=" . $this->id);
+        return $payments;
     }
 }
 
@@ -192,13 +203,23 @@ class contract extends db_Object
         parent::__construct("contracts");
     }
     
-    public function getTenantId()
+    protected function getTenantId()
     {
         return $this->row["tenant_id"];
     }
 
-    public function getObjectId()
+    protected function getObjectId()
     {
         return $this->row["object_id"];
     }
+    
+    public function getData()
+    {
+        $data=array();
+        $data["rent"]=$this->row["rent"];       
+        $data["deposit"]=$this->row["deposit"];
+        $data["enter_date"]=$this->row["enter_date"];
+        return $data;
+    }
+    
 }
