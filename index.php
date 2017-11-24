@@ -174,5 +174,6 @@
             //$("#debug").html($("textarea").val());
          });
       </script>
+      <script src="greeter.js"></script>
 </body>
 </html>
